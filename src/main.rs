@@ -69,7 +69,7 @@ fn try_main() -> Result<(), String> {
         if argument.contains("minetest") && !argument.contains("mumble-wrapper") && std::path::Path::new(&argument).exists() {
             minetest_command = std::path::PathBuf::from(argument);
 
-			// Relative paths with Command are undefined.
+            // Relative paths with Command are undefined.
             if minetest_command.is_relative() {
                 let mut absolute_path = std::env::current_dir().unwrap();
                 absolute_path.push(minetest_command);
@@ -118,7 +118,7 @@ fn try_main() -> Result<(), String> {
     // the first letter (the subject) is either 'p' or 'c' denoting whether this is a player or camera vector.
     // the second letter (the type) is either 'p' or 'l' denoting whether this is a position or look vector.
     // then inside brakets are the x, y, and z components, respectively.
-    let vec_regex_str = format!(r"(?P<subject>[cp]) (?P<type>[pl]) \[(?P<x>{f}) (?P<y>{f}) (?P<z>{f})\]", f=r"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?");
+    let vec_regex_str = format!(r"(?P<subject>[cp])(?P<type>[pl])=\[(?P<x>{f}) (?P<y>{f}) (?P<z>{f})\]", f=r"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?");
     let vec_regex = Regex::new(&vec_regex_str).unwrap();
 
     // This regex parses commands like "mumble id playername".
@@ -136,34 +136,36 @@ fn try_main() -> Result<(), String> {
                 // Gotta make sure the line is valid...
                 if let Ok(ref line) = line_result {
                     // Try getting the captures from the regex.
-                    if let Some(captures) = vec_regex.captures(line) {
-                        match get_data(&captures) {
-                            Ok((vec, s, t)) => {
-                                // Get the Position item that we need to set something on.
-                                let mut target = match s {
-                                    'p' => &mut player,
-                                    'c' => &mut camera,
-                                    _ => continue,
-                                };
-                                // Figure out which component to set.
-                                match t {
-                                    'p' => target.position = vec,
-                                    'l' => target.front = vec,
-                                    _ => continue,
-                                }
-                                println!("got {} {} {:?}", s, t, vec);
-                            }
-                            Err(err) => {
-                                println!("error getting vec: {}", err);
-                            }
-                        }
-                    } else if let Some(captures) = cmd_regex.captures(line) {
+                    if let Some(captures) = cmd_regex.captures(line) {
                         let arg = &captures["arg"];
 
                         match &captures["cmd"] {
                             "submit" => {
                                 // Submit the gathered data to Mumble.
                                 println!("Updating...");
+                                let result = vec_regex.captures_iter(arg);
+                                for captures in result {
+                                    match get_data(&captures) {
+                                        Ok((vec, s, t)) => {
+                                            // Get the Position item that we need to set something on.
+                                            let mut target = match s {
+                                                'p' => &mut player,
+                                                'c' => &mut camera,
+                                                _ => continue,
+                                            };
+                                            // Figure out which component to set.
+                                            match t {
+                                                'p' => target.position = vec,
+                                                'l' => target.front = vec,
+                                                _ => continue,
+                                            }
+                                            println!("got {} {} {:?}", s, t, vec);
+                                        }
+                                        Err(err) => {
+                                            println!("error getting vec: {}", err);
+                                        }
+                                    }
+                                }
                                 link.update(player, camera)
                             },
                             "id" => {

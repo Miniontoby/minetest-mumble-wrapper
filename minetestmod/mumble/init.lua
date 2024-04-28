@@ -3,6 +3,7 @@ local serverinfo
 local minetestversion = string.gsub(minetest.get_version().string, '%.', '')
 minetestversion = tonumber(minetestversion)
 local timer = 0
+local previous_info = {}
 
 minetest.register_globalstep(function(dtime)
 	if minetest.localplayer and not player then
@@ -35,6 +36,14 @@ minetest.register_globalstep(function(dtime)
 			camera_look = minetest.camera:get_look_dir()
 			player_look = camera_look
 		end
-		minetest.log("action", "mumble submit pp=["..(player_pos.x).." "..(player_pos.y).." "..(player_pos.z).."] pl=["..(player_look.x).." "..(player_look.y).." "..(player_look.z).."] cp=["..(camera_pos.x).." "..(camera_pos.y).." "..(camera_pos.z).."] cl=["..(camera_look.x).." "..(camera_look.y).." "..(camera_look.z).."]")
+		if not(previous_info.player_pos == player_pos and previous_info.player_look == player_look and previous_info.camera_pos == camera_pos and previous_info.camera_look == camera_look) then
+			minetest.log("action", "mumble submit pp=["..(player_pos.x).." "..(player_pos.y).." "..(player_pos.z).."] pl=["..(player_look.x).." "..(player_look.y).." "..(player_look.z).."] cp=["..(camera_pos.x).." "..(camera_pos.y).." "..(camera_pos.z).."] cl=["..(camera_look.x).." "..(camera_look.y).." "..(camera_look.z).."]")
+			previous_info = {
+				player_pos = player_pos,
+				player_look = player_look,
+				camera_pos = camera_pos,
+				camera_look = camera_look,
+			}
+		end
 	end
 end)
